@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Registro de Plantio de Laranjas</title>
+  <!-- Link para o Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+  <style>
+    /* Reset básico para remover margens e preenchimentos padrão */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Estilo geral do body */
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f0f8f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 20px;
+    }
+
+    /* Container centralizado para o conteúdo */
+    .container {
+      background-color: #ffffff;
+      padding: 30px;
+      max-width: 900px;
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    /* Título principal */
+    h1 {
+      font-size: 32px;
+      color: #388e3c;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    /* Estilo dos labels */
+    label {
+      font-size: 16px;
+      margin-bottom: 8px;
+      display: block;
+      color: #333;
+      text-align: left;
+    }
+
+    /* Campos de input e botão */
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 16px;
+    }
+
+    input:focus, button:focus {
+      outline: none;
+      border-color: #4CAF50;
+    }
+
+    /* Estilo do botão */
+    button {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      font-size: 16px;
+    }
+
+    /* Efeito de hover no botão */
+    button:hover {
+      background-color: #45a049;
+    }
+
+    /* Estilo dos ícones */
+    .icon {
+      margin-right: 8px;
+    }
+
+    /* Estilo das mensagens de sucesso e erro */
+    .mensagem {
+      margin-top: 20px;
+      font-weight: bold;
+      padding: 12px;
+      border-radius: 8px;
+    }
+
+    .mensagem.sucesso {
+      background-color: #e8f5e9;
+      color: #388e3c;
+    }
+
+    .mensagem.erro {
+      background-color: #ffebee;
+      color: #d32f2f;
+    }
+
+    h2 {
+      color: #388e3c;
+      font-size: 22px;
+      margin-top: 20px;
+      margin-bottom: 15px;
+    }
+
+    /* Tabela e formulário */
+    .total-plantios, .formulario-plantio {
+      display: none;
+    }
+
+    .active {
+      display: block;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      label {
+        font-size: 14px;
+      }
+
+      input, button {
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 24px;
+      }
+      label {
+        font-size: 12px;
+      }
+      input, button {
+        font-size: 12px;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1><i class="fas fa-seedling icon"></i> AgroCitro - Registro de Plantio de Laranjas</h1>
+    <!-- Formulário de Registro de Plantio -->
+    <div id="formulario-plantio" class="formulario-plantio active">
+      <form id="formPlantio">
+        <label for="variedade">Variedade:</label>
+        <input type="text" id="variedade" required />
+
+        <label for="data_plantio">Data do Plantio:</label>
+        <input type="date" id="data_plantio" required />
+
+        <label for="qtde_plantada">Quantidade Plantada:</label>
+        <input type="number" id="qtde_plantada" min="1" required />
+
+        <label for="localizacao">Localização:</label>
+        <input type="text" id="localizacao" required />
+
+        <button type="submit">Registrar Plantio</button>
+      </form>
+
+      <div id="mensagem" class="mensagem"></div>
+      <h2>Consultar Total de Plantios</h2>
+      <button id="consultarMudas">Ir para Total de Plantios</button>
+    </div>
+
+    <!-- Tabela para exibir os plantios registrados -->
+    <div id="total-plantios" class="total-plantios">
+      <h2>Total de Plantios Registrados</h2>
+      <div id="resultadoMudas" class="mensagem"></div>
+
+      <button id="voltarParaFormulario">Voltar para o Registro de Plantios</button>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('formPlantio');
+    const mensagem = document.getElementById('mensagem');
+    const API_URL = 'http://localhost:3000';
+    const formularioPlantio = document.getElementById('formulario-plantio');
+    const totalPlantios = document.getElementById('total-plantios');
+    const resultadoMudas = document.getElementById('resultadoMudas');
+    const consultarMudasBtn = document.getElementById('consultarMudas');
+    const voltarParaFormularioBtn = document.getElementById('voltarParaFormulario');
+
+    // Função para mostrar mensagens de sucesso ou erro
+    function mostrarMensagem(texto, tipo) {
+      mensagem.textContent = texto;
+      mensagem.className = 'mensagem ' + (tipo === 'erro' ? 'erro' : 'sucesso');
+    }
+
+    // Função para carregar os plantios registrados
+    async function carregarPlantios() {
+      try {
+        const res = await fetch(`${API_URL}/plantios`);
+        if (!res.ok) throw new Error('Falha ao carregar plantios');
+        const plantios = await res.json();
+
+        if (plantios.length === 0) {
+          resultadoMudas.textContent = 'Nenhum plantio registrado.';
+          return;
+        }
+
+        resultadoMudas.textContent = `Total de Plantios Registrados: ${plantios.length}`;
+        resultadoMudas.className = 'mensagem sucesso';
+      } catch {
+        resultadoMudas.textContent = 'Erro ao consultar total de plantios.';
+        resultadoMudas.className = 'mensagem erro';
+      }
+    }
+
+    // Enviar o formulário para registrar o plantio
+    form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  mostrarMensagem('', '');
+
+  const Variedade = document.getElementById('variedade').value.trim();
+  const Data_Plantio = document.getElementById('data_plantio').value;
+  const Quantidade_Plantada = Number(document.getElementById('qtde_plantada').value);
+  const Localizacao = document.getElementById('localizacao').value.trim();
+
+  if (!Variedade || !Data_Plantio || !Quantidade_Plantada || !Localizacao) {
+    mostrarMensagem('Por favor, preencha todos os campos.', 'erro');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/plantio`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({Data_Plantio, Variedade, Quantidade_Plantada, Localizacao })
+    });
+
+    if (!res.ok) {
+      const erro = await res.json().catch(() => ({}));
+      mostrarMensagem(erro.erro || 'Erro ao registrar plantio.', 'erro');
+      return;
+    }
+
+    const data = await res.json();
+    mostrarMensagem(`Plantio registrado com código: ${data.novo_codigo}`, 'sucesso');
+
+    form.reset();
+  } catch {
+    mostrarMensagem('Erro ao registrar plantio.', 'erro');
+  }
+});
+
+    // Redirecionar para a página de total de plantios
+    consultarMudasBtn.addEventListener('click', async () => {
+      formularioPlantio.classList.remove('active');
+      totalPlantios.classList.add('active');
+      await carregarPlantios();
+    });
+
+    // Voltar para o formulário de plantio
+    voltarParaFormularioBtn.addEventListener('click', () => {
+      totalPlantios.classList.remove('active');
+      formularioPlantio.classList.add('active');
+    });
+  </script>
+</body>
+</html>
