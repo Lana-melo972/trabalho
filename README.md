@@ -66,3 +66,8 @@ AgroCitrus/
 
 -Vercel
 
+### Nomes:
+- Lana Melo
+- João Guilherme 
+- katlym 
+- Lara de Andrade
